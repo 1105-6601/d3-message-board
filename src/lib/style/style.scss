@@ -1,0 +1,219 @@
+.d3-message-board {
+
+  // Define animation
+  @keyframes dash {
+    to {
+      stroke-dashoffset: -1000;
+    }
+  }
+
+  // Define main styles
+  body {
+    margin: 0;
+    padding: 0;
+    font-size: 14px;
+    text-align: left;
+
+    * {
+      box-sizing: border-box;
+    }
+  }
+
+  g.drag {
+    cursor: crosshair;
+  }
+
+  g.rects {
+    .comment {
+      body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+
+        textarea {
+          width: 98%;
+          margin: 1%;
+          height: 97.5%;
+          padding: 10px;
+
+          resize: none;
+          outline: none;
+          border: none;
+        }
+      }
+    }
+
+    .close-icon {
+      cursor: pointer;
+
+      * {
+        user-select: none;
+      }
+
+      body {
+        width: 100%;
+        height: 100%;
+        text-align: center;
+
+        .times {
+          font-weight: bold;
+          color: #455a64;
+        }
+      }
+    }
+
+    .highlight {
+      cursor: pointer;
+
+      &.animate {
+        animation: dash 30s infinite linear;
+      }
+    }
+  }
+
+  g.input {
+    .container {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+
+      .input {
+        flex: 5;
+      }
+
+      .colors {
+        flex: 1;
+      }
+
+      .controls {
+        flex: 1;
+        display: flex;
+        flex-direction: row-reverse;
+        justify-content: flex-start;
+        align-items: center;
+      }
+
+      hr {
+        width: 96%;
+        margin: 0 2%;
+        height: 1px;
+        border: none;
+        background-image: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0));
+      }
+
+      textarea {
+        width: 98%;
+        margin: 1%;
+        height: 96%;
+        padding: 10px;
+
+        resize: none;
+        outline: none;
+        border: none;
+      }
+
+      ul {
+        // Reset CSS
+        padding: 0;
+        margin-block-start: 0;
+        margin-block-end: 0;
+        margin-inline-start: 0;
+        margin-inline-end: 0;
+        padding-inline-start: 0;
+
+        // Define style
+        width: 98%;
+        height: 84%;
+        margin: 1%;
+        list-style: none;
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+
+        li {
+          margin: 0 2.5px;
+          padding: 0;
+          width: 35px;
+          height: 35px;
+
+          a {
+            transition: all 200ms ease-out;
+            display: inline-block;
+            border: 2px solid rgba(255, 255, 255, 0);
+            border-radius: 5px;
+            outline: none;
+            width: 100%;
+            height: 100%;
+
+            &.active {
+              border: 2px solid rgba(0, 0, 0, 0.6);
+            }
+          }
+        }
+      }
+
+      button {
+        cursor: pointer;
+
+        border-radius: 50px;
+        outline: initial !important;
+        box-shadow: initial !important;
+
+        display: inline-block;
+        font-weight: 400;
+        text-align: center;
+        vertical-align: middle;
+        user-select: none;
+        border: 1px solid transparent;
+        transition: all 0.15s ease-in-out;
+
+        padding: 4px 10px;
+        font-size: 12px;
+        line-height: 14px;
+
+        margin: 0 8px 0 0;
+      }
+
+      button.btn-confirm {
+        background-color: #73c2fb;
+        border-color: #73c2fb;
+        color: #fff;
+
+        &:hover {
+          color: #fff;
+          background-color: #4bb1fa;
+          border-color: #4bb1fa;
+        }
+
+        &:active {
+          background-color: #38a8f9;
+          border-color: #38a8f9;
+          color: #fff;
+        }
+      }
+
+      button.btn-cancel {
+        background-color: #dae0e5;
+        border-color: #d3d9df;
+        color: #212529;
+
+        &:hover {
+          color: #131113;
+          background-color: #d8d8d8;
+          border-color: #d8d8d8;
+        }
+
+        &:active {
+          color: #212529;
+          background-color: #dae0e5;
+          border-color: #d3d9df;
+        }
+      }
+    }
+  }
+}
+
+
+

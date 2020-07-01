@@ -1,0 +1,27 @@
+{
+  "name": "d3-message-board",
+  "version": "1.0.3",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "webpack --config webpack.js",
+    "prepare": "npm run build"
+  },
+  "author": "Tkzo",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/d3": "^5.7.2",
+    "css-loader": "^3.6.0",
+    "sass": "^1.26.9",
+    "sass-loader": "^8.0.2",
+    "style-loader": "^1.2.1",
+    "ts-loader": "^4.4.2",
+    "typescript": "^3.0.1",
+    "webpack": "^4.16.4",
+    "webpack-cli": "^3.1.0"
+  },
+  "dependencies": {
+    "d3": "^5.16.0"
+  },
+  "main": "dist/index.js",
+  "types": "dist/src/index.d.ts"
+}
