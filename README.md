@@ -18,11 +18,22 @@ npm i d3-message-board --save
 
 ## Basic usage
 
+Html
+
+```html
+<div id="canvas"></div>
+```
+
+Script
+
 ```typescript
 import { Board, newConfiguration } from 'd3-message-board';
 
 // Make new configuration
 const configuration = newConfiguration();
+
+// Set canvas element selector
+configuration.canvas.selector = '#canvas';
 
 // Set background image url
 configuration.canvas.backgroundImageUrl = 'https://picsum.photos/400/350';
