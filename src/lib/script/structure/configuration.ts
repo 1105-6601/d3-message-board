@@ -32,7 +32,7 @@ export function newConfiguration(): Configuration
   };
 }
 
-export function loadConfiguration(json: string)
+export function loadConfiguration(json: string): Configuration
 {
   const object = JSON.parse(json);
 

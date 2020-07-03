@@ -15,4 +15,4 @@ export interface Configuration {
     rectangles: Item<Rectangle>[];
 }
 export declare function newConfiguration(): Configuration;
-export declare function loadConfiguration(json: string): any;
+export declare function loadConfiguration(json: string): Configuration;

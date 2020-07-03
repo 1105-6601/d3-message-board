@@ -4,6 +4,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "webpack --config webpack.js",
+    "watch": "webpack --config webpack.js --watch",
     "prepare": "npm run build"
   },
   "author": "Tkzo",

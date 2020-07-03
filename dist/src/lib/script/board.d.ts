@@ -15,6 +15,7 @@ export declare class Board {
     private calculateCanvasSize;
     private makeGridLines;
     private bindEventsForEdit;
+    private getAbsoluteRect;
     private initInputUI;
     private cleanUpInputState;
     private initRectangles;
@@ -24,4 +25,6 @@ export declare class Board {
     private closest;
     private getInputUITemplate;
     private getRemoteImageSize;
+    private getWindowSafeArea;
+    private makeDot;
 }

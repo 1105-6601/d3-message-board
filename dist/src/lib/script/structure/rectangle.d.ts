@@ -1,4 +1,5 @@
 import { Coordinate } from './coordinate';
+import { Size } from './size';
 export interface Rectangle {
     id?: string;
     leftTop: Coordinate;
@@ -18,7 +19,8 @@ declare class _Rectangle implements Rectangle {
     get height(): number;
     getSpecialCoordinate(position: string): Coordinate;
     getArrowPolygonPoints(position: string, size?: number, cornerSpace?: number): string;
-    getPositionedRectangle(position: string, margin?: number, width?: number): _Rectangle;
+    getPositionedRectangle(position: string, margin?: number, size?: Size): _Rectangle;
     getArea(): number;
+    calculateSize(config: Size, autoResize: boolean, textLength: number): _Rectangle;
 }
 export {};

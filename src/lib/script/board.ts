@@ -4,6 +4,7 @@ import { Rectangle, newRectangle } from './structure/rectangle';
 import { Configuration }           from './structure/configuration';
 import { Offset }                  from './structure/offset';
 import { Size }                    from './structure/size';
+import { Coordinate }              from './structure/coordinate';
 
 export class Board
 {
@@ -258,19 +259,44 @@ export class Board
           // Show input UI
           const topRight = rect.getSpecialCoordinate('top-right');
 
+          const inputUIRectPosition: Coordinate = {
+            x: topRight.x + this.config.input.margin,
+            y: topRight.y,
+          };
+
+          // Detect right and bottom of presentation area
+          const safeArea = this.getWindowSafeArea();
+
+          const svgRect = this.getAbsoluteRect(this.svg.node());
+
+          const inputAreaBottomRight: Coordinate = {
+            x: svgRect.x + topRight.x + this.config.input.margin + this.config.input.width,
+            y: svgRect.y + topRight.y + this.config.input.height,
+          };
+
+          if (safeArea.x < inputAreaBottomRight.x) {
+            const diff = inputAreaBottomRight.x - safeArea.x;
+            inputUIRectPosition.x -= diff;
+          }
+
+          if (safeArea.y < inputAreaBottomRight.y) {
+            const diff = inputAreaBottomRight.y - safeArea.y;
+            inputUIRectPosition.y -= diff;
+          }
+
           const inputUIRectGroup = this.svg
             .select('g.input')
             .style('display', 'block');
 
           inputUIRectGroup
             .select('rect')
-            .attr('x', topRight.x + 20)
-            .attr('y', topRight.y);
+            .attr('x', inputUIRectPosition.x)
+            .attr('y', inputUIRectPosition.y);
 
           inputUIRectGroup
             .select('foreignObject')
-            .attr('x', topRight.x + 20)
-            .attr('y', topRight.y);
+            .attr('x', inputUIRectPosition.x)
+            .attr('y', inputUIRectPosition.y);
 
           // Focus to textarea
           const textArea = <HTMLTextAreaElement>this.svg
@@ -283,6 +309,16 @@ export class Board
           this.currentTemporaryRectangle = rect;
         })
       );
+  }
+
+  private getAbsoluteRect(target: HTMLElement): Coordinate
+  {
+    const rect = target.getBoundingClientRect();
+
+    return {
+      x: rect.x + window.scrollX,
+      y: rect.y + window.scrollY,
+    }
   }
 
   private initInputUI()
@@ -423,42 +459,65 @@ export class Board
       .enter()
       .append('g')
       .attr('id', d => newRectangle(d.figure).id)
+      .attr('data-color', d => d.figure.colorCode || this.config.balloon.borderColor)
       .attr('class', 'comment')
       .style('display', 'none')
     ;
 
+    const commentRect = (rect: Rectangle) => {
+      return newRectangle(rect).getPositionedRectangle('right', this.config.balloon.margin, this.config.balloon.size)
+    };
+
     // Container rect
     commentRectGroup
       .append('rect')
-      .attr('x', d => newRectangle(d.figure).getPositionedRectangle('right', 20, 350).x)
-      .attr('y', d => newRectangle(d.figure).getPositionedRectangle('right', 20, 350).y)
-      .attr('width', this.config.balloon.width)
-      .attr('height', this.config.balloon.height)
+      .attr('x', d => commentRect(d.figure).x)
+      .attr('y', d => commentRect(d.figure).y)
+      .attr('width', d => commentRect(d.figure).calculateSize(this.config.balloon.size, this.config.balloon.autoResize, d.text.value.length).width)
+      .attr('height', d => commentRect(d.figure).calculateSize(this.config.balloon.size, this.config.balloon.autoResize, d.text.value.length).height)
       .attr('rx', 5)
       .attr('ry', 5)
       .attr('fill', 'white')
       .attr('fill-opacity', 1)
-      .attr('stroke', this.config.balloon.borderColor)
+      .attr('stroke', d => d.figure.colorCode || this.config.balloon.borderColor)
       .attr('stroke-width', this.config.balloon.borderWidth)
       .attr('class', 'comment')
     ;
 
-    // Arrow
+    // Left Arrow
     commentRectGroup
       .append('polygon')
-      .attr('fill', this.config.balloon.borderColor)
-      .attr('points', d => newRectangle(d.figure).getPositionedRectangle('right', 20, 350).getArrowPolygonPoints('left-top'))
+      .attr('class', 'arrow-left')
+      .attr('opacity', 0)
+      .attr('fill', d => d.figure.colorCode || this.config.balloon.borderColor)
+      .attr('points', d => commentRect(d.figure)
+        .calculateSize(this.config.balloon.size, this.config.balloon.autoResize, d.text.value.length)
+        .getArrowPolygonPoints('left-top', this.config.balloon.arrowSize))
+    ;
+
+    // Right Arrow
+    commentRectGroup
+      .append('polygon')
+      .attr('class', 'arrow-right')
+      .attr('opacity', 0)
+      .attr('fill', d => d.figure.colorCode || this.config.balloon.borderColor)
+      .attr('points', d => commentRect(d.figure)
+        .calculateSize(this.config.balloon.size, this.config.balloon.autoResize, d.text.value.length)
+        .getArrowPolygonPoints('right-top', this.config.balloon.arrowSize))
     ;
 
     // Text
     commentRectGroup
       .append('foreignObject')
-      .attr('x', d => newRectangle(d.figure).getPositionedRectangle('right', 20, 350).x)
-      .attr('y', d => newRectangle(d.figure).getPositionedRectangle('right', 20, 350).y)
-      .attr('width', this.config.balloon.width)
-      .attr('height', this.config.balloon.height)
+      .attr('x', d => commentRect(d.figure).x)
+      .attr('y', d => commentRect(d.figure).y)
+      .attr('width', d => commentRect(d.figure).calculateSize(this.config.balloon.size, this.config.balloon.autoResize, d.text.value.length).width)
+      .attr('height', d => commentRect(d.figure).calculateSize(this.config.balloon.size, this.config.balloon.autoResize, d.text.value.length).height)
       .append('xhtml:body')
-      .html(d => `<textarea>${d.text.value}</textarea>`)
+      .html(d => {
+        const rect = commentRect(d.figure).calculateSize(this.config.balloon.size, this.config.balloon.autoResize, d.text.value.length);
+        return `<textarea style="width: ${rect.width - 5}px; height: ${rect.height - 5}px">${d.text.value}</textarea>`;
+      })
     ;
 
     /**
@@ -505,6 +564,59 @@ export class Board
         }
 
         const id = newRectangle(d.figure).id;
+
+        const isFixed = this.svg
+          .select(`#${id}`)
+          .classed('fixed');
+
+        if (isFixed) {
+          return;
+        }
+
+        const cRect = commentRect(d.figure).calculateSize(this.config.balloon.size, this.config.balloon.autoResize, d.text.value.length);
+
+        // Tweak comment rect position
+        const balloon     = this.svg.select(`#${id}`);
+        const balloonRect = this.getAbsoluteRect(<HTMLElement>balloon.node());
+
+        const balloonRectBottomRight: Coordinate = {
+          x: balloonRect.x + cRect.width + this.config.balloon.arrowSize,
+          y: balloonRect.y + cRect.height,
+        };
+
+        const safeArea = this.getWindowSafeArea();
+
+        let translateX     = 0;
+        let translateY     = 0;
+        let arrowDirection = 'left';
+        if (safeArea.x < balloonRectBottomRight.x) {
+          arrowDirection = 'right';
+          translateX     = newRectangle(d.figure).width + cRect.width + (this.config.balloon.margin * 2);
+        }
+
+        if (safeArea.y < balloonRectBottomRight.y) {
+          translateY = balloonRectBottomRight.y - safeArea.y;
+        }
+
+        // Toggle arrow display state
+        switch (arrowDirection) {
+          case 'left':
+            balloon.select('.arrow-left').attr('opacity', 1);
+            balloon.select('.arrow-right').attr('opacity', 0);
+            break;
+          case 'right':
+            balloon.select('.arrow-left').attr('opacity', 0);
+            balloon.select('.arrow-right').attr('opacity', 1);
+            break;
+        }
+
+        // Apply frame position
+        balloon.style('transform', `translate(-${translateX}px, -${translateY}px)`);
+
+        // Apply arrow position
+        balloon
+          .selectAll('polygon')
+          .style('transform', `translateY(${translateY}px)`);
 
         // Show comment rect
         this.svg
@@ -557,14 +669,18 @@ export class Board
     const target = this.svg.select(`#${commentGroupId}`);
     const state  = typeof toBe !== 'undefined' ? toBe : !target.classed('fixed');
 
-    target
-      .classed('fixed', state);
+    // Change fixed state
+    target.classed('fixed', state);
+
+    // Change appearance
+    // Frame
     target
       .select('rect')
-      .attr('stroke', target.classed('fixed') ? this.config.balloon.highlightColor : this.config.balloon.borderColor);
+      .attr('stroke', target.classed('fixed') ? this.config.balloon.highlightColor : target.attr('data-color'));
+    // Arrows
     target
-      .select('polygon')
-      .attr('fill', target.classed('fixed') ? this.config.balloon.highlightColor : this.config.balloon.borderColor);
+      .selectAll('polygon')
+      .attr('fill', target.classed('fixed') ? this.config.balloon.highlightColor : target.attr('data-color'));
   }
 
   private initCloseIcon(): void
@@ -738,5 +854,27 @@ export class Board
 
       img.src = url;
     });
+  }
+
+  private getWindowSafeArea(): Coordinate
+  {
+    const safeAreaMargin = 10;
+
+    return {
+      x: window.innerWidth - safeAreaMargin,
+      y: window.innerHeight - safeAreaMargin,
+    };
+  }
+
+  private makeDot(pos: Coordinate, color: string = 'black'): void
+  {
+    const div            = document.createElement('div');
+    div.style.position   = 'fixed';
+    div.style.top        = `${pos.y}px`;
+    div.style.left       = `${pos.x}px`;
+    div.style.width      = '5px';
+    div.style.height     = '5px';
+    div.style.background = color;
+    document.body.appendChild(div);
   }
 }

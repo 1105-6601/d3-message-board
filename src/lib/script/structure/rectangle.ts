@@ -1,4 +1,5 @@
 import { Coordinate } from './coordinate';
+import { Size }       from './size';
 
 export interface Rectangle
 {
@@ -8,7 +9,7 @@ export interface Rectangle
   colorCode?: string;
 }
 
-export function newRectangle(rectangle: Rectangle)
+export function newRectangle(rectangle: Rectangle): _Rectangle
 {
   if (rectangle instanceof _Rectangle) {
     return rectangle;
@@ -156,7 +157,7 @@ class _Rectangle implements Rectangle
     return points;
   }
 
-  public getPositionedRectangle(position: string, margin: number = 0, width?: number): _Rectangle
+  public getPositionedRectangle(position: string, margin: number = 0, size?: Size): _Rectangle
   {
     let leftTop: Coordinate,
         rightBottom: Coordinate;
@@ -168,8 +169,8 @@ class _Rectangle implements Rectangle
           y: this.y
         };
 
-        if (width) {
-          leftTop.x = this.x - width - margin;
+        if (size) {
+          leftTop.x = this.x - size.width - margin;
         }
 
         rightBottom = this.getSpecialCoordinate('bottom-left');
@@ -181,11 +182,12 @@ class _Rectangle implements Rectangle
 
         rightBottom = this.getSpecialCoordinate('bottom-right');
 
-        if (!width) {
-          rightBottom.x += this.width + margin;
+        if (size) {
+          rightBottom.x += size.width + margin;
         } else {
-          rightBottom.x += width + margin;
+          rightBottom.x += this.width + margin;
         }
+
         break;
       default:
         throw Error('Invalid position specified.');
@@ -197,5 +199,46 @@ class _Rectangle implements Rectangle
   public getArea(): number
   {
     return this.width * this.height;
+  }
+
+  public calculateSize(config: Size, autoResize: boolean, textLength: number): _Rectangle
+  {
+    if (!autoResize) {
+      return this;
+    }
+
+    const minWidth  = 100;
+    const minHeight = 50;
+
+    let charWidth  = 16;
+    let lineHeight = 16;
+    let width      = textLength * charWidth;
+    if (width > config.width) {
+      width = config.width;
+    }
+    if (width < minWidth) {
+      width = minWidth;
+    }
+
+    const perLine      = Math.ceil(config.width / charWidth);
+    const requiredLine = Math.ceil(textLength / perLine);
+
+    let height = lineHeight * requiredLine;
+    if (height > config.height) {
+      height = config.height;
+    }
+    if (height < minHeight) {
+      height = minHeight;
+    }
+
+    return new _Rectangle({
+      id:          this.id,
+      leftTop:     this.leftTop,
+      rightBottom: {
+        x: this.leftTop.x + width,
+        y: this.leftTop.y + height,
+      },
+      colorCode:   this.colorCode
+    });
   }
 }
