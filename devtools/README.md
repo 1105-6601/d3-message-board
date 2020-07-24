@@ -16,7 +16,7 @@ npm version minor // or
 npm version patch
 ```
 
-Public package
+Publish package
 
 ```
 npm publish
