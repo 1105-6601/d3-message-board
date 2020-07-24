@@ -594,8 +594,8 @@ export class Board
           translateX     = newRectangle(d.figure).width + cRect.width + (this.config.balloon.margin * 2);
         }
 
-        if (safeArea.y < balloonRectBottomRight.y) {
-          translateY = balloonRectBottomRight.y - safeArea.y;
+        if (safeArea.y + window.scrollY < balloonRectBottomRight.y) {
+          translateY = balloonRectBottomRight.y - (safeArea.y + window.scrollY);
         }
 
         // Toggle arrow display state
