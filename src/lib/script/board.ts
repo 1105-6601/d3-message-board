@@ -266,8 +266,7 @@ export class Board
 
           // Detect right and bottom of presentation area
           const safeArea = this.getWindowSafeArea();
-
-          const svgRect = this.getAbsoluteRect(this.svg.node());
+          const svgRect  = this.getAbsoluteRect(this.svg.node());
 
           const inputAreaBottomRight: Coordinate = {
             x: svgRect.x + topRight.x + this.config.input.margin + this.config.input.width,
@@ -862,7 +861,7 @@ export class Board
 
     return {
       x: window.innerWidth - safeAreaMargin,
-      y: window.innerHeight - safeAreaMargin,
+      y: window.innerHeight + window.scrollY - safeAreaMargin,
     };
   }
 
