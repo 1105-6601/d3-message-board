@@ -1,5 +1,6 @@
 import * as d3                     from 'd3';
 import { Selection }               from 'd3';
+import * as linkifyjs              from 'linkifyjs';
 import { Rectangle, newRectangle } from './structure/rectangle';
 import { Configuration }           from './structure/configuration';
 import { Offset }                  from './structure/offset';
@@ -303,7 +304,7 @@ export class Board
             .node();
 
           textArea.focus();
-          textArea.value = this.config.message.textAreaPlaceholder;
+          textArea.placeholder = this.config.message.textAreaPlaceholder;
 
           this.currentTemporaryRectangle = rect;
         })
@@ -472,8 +473,8 @@ export class Board
       .append('rect')
       .attr('x', d => commentRect(d.figure).x)
       .attr('y', d => commentRect(d.figure).y)
-      .attr('width', d => commentRect(d.figure).calculateSize(this.config.balloon.size, this.config.balloon.autoResize, d.text.value.length).width)
-      .attr('height', d => commentRect(d.figure).calculateSize(this.config.balloon.size, this.config.balloon.autoResize, d.text.value.length).height)
+      .attr('width', d => commentRect(d.figure).calculateSize(this.config.balloon.size, this.config.balloon.autoResize, d.text.value).width)
+      .attr('height', d => commentRect(d.figure).calculateSize(this.config.balloon.size, this.config.balloon.autoResize, d.text.value).height)
       .attr('rx', 5)
       .attr('ry', 5)
       .attr('fill', 'white')
@@ -490,7 +491,7 @@ export class Board
       .attr('opacity', 0)
       .attr('fill', d => d.figure.colorCode || this.config.balloon.borderColor)
       .attr('points', d => commentRect(d.figure)
-        .calculateSize(this.config.balloon.size, this.config.balloon.autoResize, d.text.value.length)
+        .calculateSize(this.config.balloon.size, this.config.balloon.autoResize, d.text.value)
         .getArrowPolygonPoints('left-top', this.config.balloon.arrowSize))
     ;
 
@@ -501,7 +502,7 @@ export class Board
       .attr('opacity', 0)
       .attr('fill', d => d.figure.colorCode || this.config.balloon.borderColor)
       .attr('points', d => commentRect(d.figure)
-        .calculateSize(this.config.balloon.size, this.config.balloon.autoResize, d.text.value.length)
+        .calculateSize(this.config.balloon.size, this.config.balloon.autoResize, d.text.value)
         .getArrowPolygonPoints('right-top', this.config.balloon.arrowSize))
     ;
 
@@ -510,12 +511,16 @@ export class Board
       .append('foreignObject')
       .attr('x', d => commentRect(d.figure).x)
       .attr('y', d => commentRect(d.figure).y)
-      .attr('width', d => commentRect(d.figure).calculateSize(this.config.balloon.size, this.config.balloon.autoResize, d.text.value.length).width)
-      .attr('height', d => commentRect(d.figure).calculateSize(this.config.balloon.size, this.config.balloon.autoResize, d.text.value.length).height)
+      .attr('width', d => commentRect(d.figure).calculateSize(this.config.balloon.size, this.config.balloon.autoResize, d.text.value).width)
+      .attr('height', d => commentRect(d.figure).calculateSize(this.config.balloon.size, this.config.balloon.autoResize, d.text.value).height)
       .append('xhtml:body')
       .html(d => {
-        const rect = commentRect(d.figure).calculateSize(this.config.balloon.size, this.config.balloon.autoResize, d.text.value.length);
-        return `<textarea style="width: ${rect.width - 5}px; height: ${rect.height - 5}px">${d.text.value}</textarea>`;
+        const rect = commentRect(d.figure).calculateSize(this.config.balloon.size, this.config.balloon.autoResize, d.text.value);
+        return `
+        <div class="textarea" style="width: ${rect.width - 5}px; height: ${rect.height - 5}px">
+        ${this.nl2br(this.linkify(d.text.value))}
+        </div>
+        `;
       })
     ;
 
@@ -572,7 +577,7 @@ export class Board
           return;
         }
 
-        const cRect = commentRect(d.figure).calculateSize(this.config.balloon.size, this.config.balloon.autoResize, d.text.value.length);
+        const cRect = commentRect(d.figure).calculateSize(this.config.balloon.size, this.config.balloon.autoResize, d.text.value);
 
         // Tweak comment rect position
         const balloon     = this.svg.select(`#${id}`);
@@ -863,6 +868,35 @@ export class Board
       x: window.innerWidth - safeAreaMargin,
       y: window.innerHeight + window.scrollY - safeAreaMargin,
     };
+  }
+
+  private nl2br(text: string): string
+  {
+    return text.replace(/\n/g, '<br>');
+  }
+
+  private linkify(text: string): string
+  {
+    const result = linkifyjs.find(text);
+
+    const entities: { [key: string]: string } = {};
+
+    result.forEach((item, index) => {
+      if (item.type === 'url') {
+        const anchor = `<a href="${item.href}" target="_blank">${item.value}</a>`;
+        const marker = `{{${index}}}`;
+
+        entities[marker] = anchor;
+
+        text = text.replace(item.value, marker);
+      }
+    });
+
+    Object.keys(entities).forEach(marker => {
+      text = text.replace(marker, entities[marker]);
+    });
+
+    return text;
   }
 
   private makeDot(pos: Coordinate, color: string = 'black'): void

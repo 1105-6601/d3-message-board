@@ -26,5 +26,7 @@ export declare class Board {
     private getInputUITemplate;
     private getRemoteImageSize;
     private getWindowSafeArea;
+    private nl2br;
+    private linkify;
     private makeDot;
 }

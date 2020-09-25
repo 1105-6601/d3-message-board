@@ -21,6 +21,6 @@ declare class _Rectangle implements Rectangle {
     getArrowPolygonPoints(position: string, size?: number, cornerSpace?: number): string;
     getPositionedRectangle(position: string, margin?: number, size?: Size): _Rectangle;
     getArea(): number;
-    calculateSize(config: Size, autoResize: boolean, textLength: number): _Rectangle;
+    calculateSize(config: Size, autoResize: boolean, text: string): _Rectangle;
 }
 export {};

@@ -31,13 +31,15 @@
         margin: 0;
         padding: 0;
 
-        textarea {
+        .textarea {
           margin: 3px;
           padding: 5px;
 
           resize: none;
           outline: none;
           border: none;
+          overflow-y: scroll;
+          overflow-x: hidden;
         }
       }
     }

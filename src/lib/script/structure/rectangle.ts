@@ -201,14 +201,17 @@ class _Rectangle implements Rectangle
     return this.width * this.height;
   }
 
-  public calculateSize(config: Size, autoResize: boolean, textLength: number): _Rectangle
+  public calculateSize(config: Size, autoResize: boolean, text: string): _Rectangle
   {
     if (!autoResize) {
       return this;
     }
 
+    const textLength = text.length;
+    const nlCount    = (text.match(/\n/g) || []).length;
+
     const minWidth  = 100;
-    const minHeight = 50;
+    const minHeight = 80;
 
     let charWidth  = 16;
     let lineHeight = 16;
@@ -221,7 +224,7 @@ class _Rectangle implements Rectangle
     }
 
     const perLine      = Math.ceil(config.width / charWidth);
-    const requiredLine = Math.ceil(textLength / perLine);
+    const requiredLine = Math.ceil(textLength / perLine) + nlCount;
 
     let height = lineHeight * requiredLine;
     if (height > config.height) {
