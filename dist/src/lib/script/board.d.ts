@@ -1,3 +1,5 @@
+import '@fortawesome/fontawesome-free/js/fontawesome';
+import '@fortawesome/fontawesome-free/js/regular';
 import { Configuration } from './structure/configuration';
 export declare class Board {
     private readonly config;
@@ -28,5 +30,6 @@ export declare class Board {
     private getWindowSafeArea;
     private nl2br;
     private linkify;
+    private downloadFileFromUrl;
     private makeDot;
 }

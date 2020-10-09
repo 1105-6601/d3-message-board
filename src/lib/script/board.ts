@@ -1,11 +1,17 @@
+import '@fortawesome/fontawesome-free/js/fontawesome';
+import '@fortawesome/fontawesome-free/js/regular';
+
 import * as d3                     from 'd3';
 import { Selection }               from 'd3';
 import * as linkifyjs              from 'linkifyjs';
+import axios                       from 'axios';
 import { Rectangle, newRectangle } from './structure/rectangle';
 import { Configuration }           from './structure/configuration';
 import { Offset }                  from './structure/offset';
 import { Size }                    from './structure/size';
 import { Coordinate }              from './structure/coordinate';
+import { UploadResponse }          from './structure/upload-response';
+import { UploadedFile }            from './structure/uploaded-file';
 
 export class Board
 {
@@ -379,21 +385,94 @@ export class Board
         this.currentTemporaryRectangle.colorCode = colorCode;
       });
 
+
+    let standbyFile: File       = null;
+    let standbyFilename: string = '';
+
+    const inputUiContainer = this.svg
+      .select('.container');
+
+    const fileInput = <HTMLInputElement>inputUIRectGroup
+      .select('[type="file"]')
+      .node();
+
+    const filenameArea = <HTMLDivElement>inputUIRectGroup
+      .select('.filename')
+      .node();
+
+    const resetFileSelectionState = () => {
+      // Only execute if enabled file upload.
+      if (!this.config.input.enableFileUpload) {
+        return;
+      }
+      fileInput.type = '';
+      fileInput.type = 'file';
+      filenameArea.classList.remove('active');
+      filenameArea.querySelector('.text').innerHTML = '';
+      inputUiContainer.classed('d3mb-loading', false);
+      standbyFile = standbyFilename = null;
+    };
+
+    // Register events for file upload.
+    if (this.config.input.enableFileUpload) {
+      fileInput.addEventListener('change', (event: any) => {
+        // Detect selected file name
+        const target          = event.target;
+        const files: FileList = target.files;
+        if (files.length) {
+          standbyFile     = files[0];
+          standbyFilename = files[0].name;
+        }
+
+        filenameArea.classList.add('active');
+        filenameArea.querySelector('.text').innerHTML = standbyFilename;
+      });
+
+      filenameArea.querySelector('.remove').addEventListener('click', () => {
+        resetFileSelectionState();
+      });
+    }
+
     // On confirm
     inputUIRectGroup
       .select('.btn-confirm')
-      .on('click', () => {
+      .on('click', async () => {
 
         const textArea = <HTMLTextAreaElement>inputUIRectGroup
           .select('textarea')
           .node();
+
+        if (!textArea.value) {
+          return alert(this.config.message.textRequiredNotification);
+        }
+
+        // Upload file
+        let files: UploadedFile[] = [];
+        if (this.config.input.enableFileUpload && this.config.input.fileUploadEndpoint && standbyFile) {
+          inputUiContainer.classed('d3mb-loading', true);
+          try {
+            const params = new FormData();
+            params.append('file', standbyFile);
+            const response: UploadResponse = await axios.post(this.config.input.fileUploadEndpoint, params).then(response => response.data);
+            if (!response.url) {
+              throw Error('Invalid response structure.');
+            }
+            files.push({
+              filename: standbyFilename,
+              url:      response.url,
+            });
+          } catch (e) {
+            return alert(this.config.message.uploadFileFailedNotification);
+          }
+        }
 
         // Create new rectangle
         this.config.rectangles.push({
           figure: this.currentTemporaryRectangle,
           text:   {
             value: textArea.value,
-          }
+          },
+          files,
         });
 
         this.currentTemporaryRectangle = null;
@@ -401,6 +480,7 @@ export class Board
         // Re-initialization
         this.initRectangles();
         this.cleanUpInputState();
+        resetFileSelectionState();
       });
 
     // On cancel
@@ -408,6 +488,14 @@ export class Board
       .select('.btn-cancel')
       .on('click', () => {
         this.cleanUpInputState();
+        resetFileSelectionState();
+      });
+
+    // On click file upload
+    inputUIRectGroup
+      .select('.btn-file')
+      .on('click', () => {
+        fileInput.click();
       });
   }
 
@@ -515,14 +603,34 @@ export class Board
       .attr('height', d => commentRect(d.figure).calculateSize(this.config.balloon.size, this.config.balloon.autoResize, d.text.value).height)
       .append('xhtml:body')
       .html(d => {
-        const rect = commentRect(d.figure).calculateSize(this.config.balloon.size, this.config.balloon.autoResize, d.text.value);
+        const hasFile = d.files && d.files.length;
+        const rect    = commentRect(d.figure).calculateSize(this.config.balloon.size, this.config.balloon.autoResize, d.text.value);
         return `
-        <div class="textarea" style="width: ${rect.width - 5}px; height: ${rect.height - 5}px">
-        ${this.nl2br(this.linkify(d.text.value))}
-        </div>
+        <div class="textarea" style="width: ${rect.width - 5}px; height: ${rect.height - 5}px">${this.nl2br(this.linkify(d.text.value))}</div>
+        ${hasFile
+          ? `<div class="download"><i class="far fa-file-alt file-icon"></i></div>`
+          : ''}
         `;
       })
     ;
+
+    const dlIfon = commentRectGroup
+      .select('.download');
+
+    dlIfon
+      .on('click', (d) => {
+        const uploadedFile = d.files && d.files.length && d.files[0];
+        if (uploadedFile && uploadedFile.url) {
+          if (dlIfon.classed('dl-disabled')) {
+            return;
+          }
+          dlIfon.classed('dl-disabled', true);
+          this.downloadFileFromUrl(uploadedFile.url, uploadedFile.filename);
+          setTimeout(() => {
+            dlIfon.classed('dl-disabled', false);
+          }, 2000);
+        }
+      });
 
     /**
      * Render highlight rectangles
@@ -767,7 +875,15 @@ export class Board
     window.addEventListener('click', (e) => {
       const target              = <HTMLElement>e.target;
       const fixedBalloonTouched = this.closest(target, '.fixed');
+
       if (fixedBalloonTouched) {
+        return;
+      }
+
+      // If when download file, ignore.
+      // const dlIconClicked = this.closest(target, '.download');
+      const dlLinkClicked = target.nodeName.toLowerCase() === 'a' && target.getAttribute('download');
+      if (dlLinkClicked) {
         return;
       }
 
@@ -840,6 +956,14 @@ export class Board
       <div class="controls">
         <button class="btn-confirm">${this.config.message.inputUIConfirmText}</button>
         <button class="btn-cancel">${this.config.message.inputUICancelText}</button>
+        ${this.config.input.enableFileUpload
+      ? `<button class="btn-file">${this.config.message.inputUIFileUploadBtnText}</button>
+         <input type="file" name="file">
+         <div class="filename">
+           <span class="remove">&times;</span>
+           <span class="text"></span>
+         </div>`
+      : ''}
       </div>
     </div>
     `;
@@ -897,6 +1021,26 @@ export class Board
     });
 
     return text;
+  }
+
+  private downloadFileFromUrl(url: string, fileName: string): void
+  {
+    const xhr = new XMLHttpRequest();
+    xhr.open('GET', url, true);
+    xhr.responseType = 'blob';
+    xhr.onload       = function () {
+      if (this.status == 200) {
+        const urlUtil   = window.URL || window.webkitURL;
+        const objectUrl = urlUtil.createObjectURL(this.response);
+        const link      = document.createElement('a');
+        link.href       = objectUrl;
+        link.download   = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link)
+      }
+    };
+    xhr.send();
   }
 
   private makeDot(pos: Coordinate, color: string = 'black'): void

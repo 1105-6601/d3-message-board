@@ -5,5 +5,7 @@ export interface InputUIConfig {
     borderColor: string;
     borderWidth: number;
     colors: string[];
+    enableFileUpload: boolean;
+    fileUploadEndpoint: string;
 }
 export declare function newInputUIConfig(): InputUIConfig;

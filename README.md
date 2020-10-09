@@ -147,6 +147,28 @@ Default coloring candidates
 ]
 ```
 
+### File upload configuration
+
+Enabled file upload function.
+
+```typescript
+configuration.input.enableFileUpload = true;
+```
+
+Set file upload endpoint url.
+
+```typescript
+configuration.input.fileUploadEndpoint = 'https://example.com/upload';
+```
+
+Required uploaded response structure.
+
+```
+{
+  "url": "https://example.com/uploaded_file.jpg";
+}
+```
+
 ### Others
 
 Various other customizations are possible. See the `dist/src/index.d.ts` file.

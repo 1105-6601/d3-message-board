@@ -6,17 +6,19 @@ export interface InputUIConfig
   borderColor: string;
   borderWidth: number;
   colors: string[];
+  enableFileUpload: boolean;
+  fileUploadEndpoint: string;
 }
 
 export function newInputUIConfig(): InputUIConfig
 {
   return {
-    width:       400,
-    height:      300,
-    margin:      20,
-    borderColor: '#455a64',
-    borderWidth: 2,
-    colors:      [
+    width:              400,
+    height:             300,
+    margin:             20,
+    borderColor:        '#455a64',
+    borderWidth:        2,
+    colors:             [
       '#f48fb1',
       '#ce93d8',
       '#90caf9',
@@ -28,5 +30,7 @@ export function newInputUIConfig(): InputUIConfig
       '#bcaaa4',
       '#b0bec5'
     ],
+    enableFileUpload:   false,
+    fileUploadEndpoint: '',
   };
 }
