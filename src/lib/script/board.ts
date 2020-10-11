@@ -1,6 +1,3 @@
-import '@fortawesome/fontawesome-free/js/fontawesome';
-import '@fortawesome/fontawesome-free/js/regular';
-
 import * as d3                     from 'd3';
 import { Selection }               from 'd3';
 import * as linkifyjs              from 'linkifyjs';
@@ -608,26 +605,26 @@ export class Board
         return `
         <div class="textarea" style="width: ${rect.width - 5}px; height: ${rect.height - 5}px">${this.nl2br(this.linkify(d.text.value))}</div>
         ${hasFile
-          ? `<div class="download"><i class="far fa-file-alt file-icon"></i></div>`
+          ? `<div class="download"><span class="file-icon" style="width: ${this.config.balloon.attachedFileLabelWidth || 70}px">${this.config.message.attachedFileLabelText}</span></div>`
           : ''}
         `;
       })
     ;
 
-    const dlIfon = commentRectGroup
+    const dlIcon = commentRectGroup
       .select('.download');
 
-    dlIfon
+    dlIcon
       .on('click', (d) => {
         const uploadedFile = d.files && d.files.length && d.files[0];
         if (uploadedFile && uploadedFile.url) {
-          if (dlIfon.classed('dl-disabled')) {
+          if (dlIcon.classed('dl-disabled')) {
             return;
           }
-          dlIfon.classed('dl-disabled', true);
+          dlIcon.classed('dl-disabled', true);
           this.downloadFileFromUrl(uploadedFile.url, uploadedFile.filename);
           setTimeout(() => {
-            dlIfon.classed('dl-disabled', false);
+            dlIcon.classed('dl-disabled', false);
           }, 2000);
         }
       });

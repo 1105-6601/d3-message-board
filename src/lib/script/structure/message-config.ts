@@ -7,6 +7,7 @@ export interface MessageConfig
   inputUIConfirmText: string;
   inputUICancelText: string;
   inputUIFileUploadBtnText: string;
+  attachedFileLabelText: string;
 }
 
 export function newMessageConfig(): MessageConfig
@@ -19,5 +20,6 @@ export function newMessageConfig(): MessageConfig
     inputUIConfirmText:           '確定',
     inputUICancelText:            'キャンセル',
     inputUIFileUploadBtnText:     'ファイル',
+    attachedFileLabelText:        '添付ファイル',
   }
 }

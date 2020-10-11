@@ -1,3 +1,8 @@
+//$fa-font-path: '~@fortawesome/fontawesome-free/webfonts';
+//@import '~@fortawesome/fontawesome-free/scss/fontawesome';
+//@import '~@fortawesome/fontawesome-free/scss/regular';
+//@import '~@fortawesome/fontawesome-free/scss/solid';
+
 .d3-message-board {
 
   // Define animation
@@ -44,10 +49,17 @@
         .file-icon {
           position: absolute;
           bottom: 7px;
-          left: 6px;
-          width: 10px;
+          left: 4px;
+          //width: 70px;
           height: 15px;
+          line-height: 15px;
           cursor: pointer;
+          background: #73c2fb;
+          border-radius: 3px;
+          font-size: 9px;
+          text-align: center;
+          color: #fff;
+          padding: 1px 2px;
         }
         .dl-disabled .file-icon {
           color: #ccc;

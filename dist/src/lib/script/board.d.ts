@@ -1,5 +1,3 @@
-import '@fortawesome/fontawesome-free/js/fontawesome';
-import '@fortawesome/fontawesome-free/js/regular';
 import { Configuration } from './structure/configuration';
 export declare class Board {
     private readonly config;

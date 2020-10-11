@@ -11,20 +11,22 @@ export interface BalloonUIConfig
   borderWidth: number;
   arrowSize: number;
   autoResize: boolean;
+  attachedFileLabelWidth: number;
 }
 
 export function newBalloonUIConfig(): BalloonUIConfig
 {
   return {
-    size:           {
+    size:                   {
       width:  400,
       height: 300,
     },
-    margin:         20,
-    highlightColor: '#ff5252',
-    borderColor:    '#455a64',
-    borderWidth:    2,
-    arrowSize:      10,
-    autoResize:     true,
+    margin:                 20,
+    highlightColor:         '#ff5252',
+    borderColor:            '#455a64',
+    borderWidth:            2,
+    arrowSize:              10,
+    autoResize:             true,
+    attachedFileLabelWidth: 70,
   };
 }
