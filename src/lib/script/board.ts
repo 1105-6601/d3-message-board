@@ -758,6 +758,234 @@ export class Board
           .attr('opacity', 0)
           .style('display', 'none')
           .lower();
+      })
+      .each(d => {
+
+        // Make drag point of 4 corner.
+        const self        = newRectangle(d.figure);
+        const topLeft     = self.getSpecialCoordinate('top-left');
+        const topRight    = self.getSpecialCoordinate('top-right');
+        const bottomLeft  = self.getSpecialCoordinate('bottom-left');
+        const bottomRight = self.getSpecialCoordinate('bottom-right');
+
+        const areaSize = 15;
+
+        // Tweak each position
+        topLeft.x    = topLeft.x - areaSize;
+        topLeft.y    = topLeft.y - areaSize;
+        topRight.y   = topRight.y - areaSize;
+        bottomLeft.x = bottomLeft.x - areaSize;
+
+        const corners: Coordinate[] = [
+          topLeft,
+          topRight,
+          bottomLeft,
+          bottomRight,
+        ];
+
+        const that    = this;
+        const thatSvg = this.svg;
+
+        let targetRectId: string;
+        let currentSize: Size             = {width: 0, height: 0};
+        let currentCoordinate: Coordinate = {x: 0, y: 0};
+
+        this.svg
+          .select('g.rects')
+          .selectAll()
+          .data(corners)
+          .enter()
+          .append('rect')
+          .attr('x', _d => _d.x)
+          .attr('y', _d => _d.y)
+          .attr('width', areaSize)
+          .attr('height', areaSize)
+          .attr('fill', 'black')
+          .attr('fill-opacity', 0)
+          .attr('data-rect-id', _d => newRectangle(d.figure).id)
+          .attr('data-position', (_d, i) => {
+            switch (i) {
+              case 0:
+                return 'top-left';
+              case 1:
+                return 'top-right';
+              case 2:
+                return 'bottom-left';
+              case 3:
+                return 'bottom-right';
+            }
+          })
+          .classed('drag-point', true)
+          .classed('tl-t-br', (_d, i) => [0, 3].includes(i))
+          .classed('bl-t-tr', (_d, i) => [1, 2].includes(i))
+          .call(d3
+            .drag()
+            .on('start', function (_d) {
+
+              // Extend drag area
+              thatSvg
+                .select(() => this)
+                .attr('x', _d => '-5000')
+                .attr('y', _d => '-5000')
+                .attr('width', '10000')
+                .attr('height', '10000')
+                .raise();
+
+              // Hide close buttons temporary
+              thatSvg
+                .selectAll('g.close-icon')
+                .style('display', 'none');
+
+              targetRectId = thatSvg
+                .select(() => this)
+                .attr('data-rect-id');
+
+              that.dragging = true;
+
+              that.dragStartX = d3.event.x;
+              that.dragStartY = d3.event.y;
+
+              // Keep current size
+              const selector = `rect[data-id="${targetRectId}"]`;
+
+              currentSize.width   = +thatSvg.select(selector).attr('width');
+              currentSize.height  = +thatSvg.select(selector).attr('height');
+              currentCoordinate.x = +thatSvg.select(selector).attr('x');
+              currentCoordinate.y = +thatSvg.select(selector).attr('y');
+            })
+            .on('drag', function () {
+
+              if (!that.dragging || !targetRectId) {
+                return;
+              }
+
+              const dragPosition = thatSvg
+                .select(() => this)
+                .attr('data-position');
+
+              // Resize rectangle in response to the drag quantity.
+              const movementWidth  = d3.event.x - that.dragStartX;
+              const movementHeight = d3.event.y - that.dragStartY;
+              const selector       = `rect[data-id="${targetRectId}"]`;
+
+              let x: number, y: number, width: number, height: number;
+
+              switch (dragPosition) {
+                case 'top-left':
+                  x      = currentCoordinate.x + movementWidth;
+                  y      = currentCoordinate.y + movementHeight;
+                  width  = currentSize.width - movementWidth;
+                  height = currentSize.height - movementHeight;
+
+                  if (width < 0) {
+                    width = Math.abs(width);
+                    x     = currentCoordinate.x + currentSize.width;
+                  }
+
+                  if (height < 0) {
+                    height = Math.abs(height);
+                    y      = currentCoordinate.y + currentSize.height;
+                  }
+                  break;
+                case 'top-right':
+                  x      = currentCoordinate.x;
+                  y      = currentCoordinate.y + movementHeight;
+                  width  = currentSize.width + movementWidth;
+                  height = currentSize.height - movementHeight;
+
+                  if (width < 0) {
+                    width = Math.abs(width);
+                    x     = currentCoordinate.x + movementWidth + currentSize.width;
+                  }
+
+                  if (height < 0) {
+                    height = Math.abs(height);
+                    y      = currentCoordinate.y + currentSize.height;
+                  }
+                  break;
+                case 'bottom-left':
+                  x      = currentCoordinate.x + movementWidth;
+                  y      = currentCoordinate.y;
+                  width  = currentSize.width - movementWidth;
+                  height = currentSize.height + movementHeight;
+
+                  if (width < 0) {
+                    width = Math.abs(width);
+                    x     = currentCoordinate.x + currentSize.width;
+                  }
+
+                  if (height < 0) {
+                    height = Math.abs(height);
+                    y      = currentCoordinate.y + movementHeight + currentSize.height;
+                  }
+                  break;
+                case 'bottom-right':
+                  x      = currentCoordinate.x;
+                  y      = currentCoordinate.y;
+                  width  = currentSize.width + movementWidth;
+                  height = currentSize.height + movementHeight;
+
+                  if (width < 0) {
+                    width = Math.abs(width);
+                    x     = currentCoordinate.x + movementWidth + currentSize.width;
+                  }
+
+                  if (height < 0) {
+                    height = Math.abs(height);
+                    y      = currentCoordinate.y + movementHeight + currentSize.height;
+                  }
+                  break;
+              }
+
+              thatSvg
+                .select(selector)
+                .attr('x', x)
+                .attr('y', y)
+                .attr('width', width)
+                .attr('height', height);
+
+            })
+            .on('end', function (_d: Coordinate) {
+
+              if (!that.dragging || !targetRectId) {
+                return;
+              }
+
+              that.dragging = false;
+
+              const selector           = `rect[data-id="${targetRectId}"]`;
+              const currentWidth       = +thatSvg.select(selector).attr('width');
+              const currentHeight      = +thatSvg.select(selector).attr('height');
+              const currentCoordinateX = +thatSvg.select(selector).attr('x');
+              const currentCoordinateY = +thatSvg.select(selector).attr('y');
+
+              // Update original data
+              const configRect = that.config.rectangles.filter(d => d.figure.id === targetRectId)[0];
+              if (configRect) {
+                configRect.figure.leftTop     = {x: currentCoordinateX, y: currentCoordinateY};
+                configRect.figure.rightBottom = {
+                  x: currentCoordinateX + currentWidth,
+                  y: currentCoordinateY + currentHeight
+                };
+              }
+
+              // Re-initialization
+              that.initRectangles();
+
+              // Shrink drag area
+              thatSvg
+                .select(() => this)
+                .attr('x', `${_d.x}`)
+                .attr('y', `${_d.y}`)
+                .attr('width', `${areaSize}`)
+                .attr('height', `${areaSize}`);
+
+              // Show close buttons
+              thatSvg
+                .selectAll('g.close-icon')
+                .style('display', 'block');
+            })
+          );
       });
 
     if (this.config.canvas.rectAnimation) {

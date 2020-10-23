@@ -92,6 +92,15 @@
         animation: dash 30s infinite linear;
       }
     }
+
+    .drag-point {
+      &.bl-t-tr {
+        cursor: nesw-resize;
+      }
+      &.tl-t-br {
+        cursor: nwse-resize;
+      }
+    }
   }
 
   g.input {
