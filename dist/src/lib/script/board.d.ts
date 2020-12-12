@@ -7,6 +7,8 @@ export declare class Board {
     private dragStartY;
     private editing;
     private currentTemporaryRectangle;
+    private currentEditingItem;
+    private currentEditingItemBackup;
     private currentFixedBalloonId;
     constructor(config: Configuration);
     init(): Promise<void>;
@@ -15,13 +17,16 @@ export declare class Board {
     private calculateCanvasSize;
     private makeGridLines;
     private bindEventsForEdit;
+    private showInputUI;
     private getAbsoluteRect;
     private initInputUI;
+    private activateSelectedColor;
     private cleanUpInputState;
     private initRectangles;
     private changeCommentBalloonAppearance;
     private initCloseIcon;
     private initGlobalEvents;
+    private closeAllBalloon;
     private closest;
     private getInputUITemplate;
     private getRemoteImageSize;
@@ -29,5 +34,6 @@ export declare class Board {
     private nl2br;
     private linkify;
     private downloadFileFromUrl;
+    private uploadFile;
     private makeDot;
 }

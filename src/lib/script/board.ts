@@ -1,8 +1,8 @@
 import * as d3                     from 'd3';
 import { Selection }               from 'd3';
 import * as linkifyjs              from 'linkifyjs';
-import axios                       from 'axios';
 import { Rectangle, newRectangle } from './structure/rectangle';
+import { Item, newRectangleItem }  from './structure/item';
 import { Configuration }           from './structure/configuration';
 import { Offset }                  from './structure/offset';
 import { Size }                    from './structure/size';
@@ -25,6 +25,10 @@ export class Board
   private editing: boolean = false;
 
   private currentTemporaryRectangle: Rectangle;
+
+  private currentEditingItem: Item<Rectangle>;
+
+  private currentEditingItemBackup: string;
 
   private currentFixedBalloonId: string;
 
@@ -246,72 +250,97 @@ export class Board
           const width  = +target.attr('width');
           const height = +target.attr('height');
 
-          const rect = newRectangle({
+          this.showInputUI({
             leftTop:     {x, y},
             rightBottom: {
               x: x + width,
               y: y + height,
             },
           });
-
-          // If area of rectangles under 500, cancel processing.
-          if (rect.getArea() < 500) {
-            this.cleanUpInputState();
-            return;
-          }
-
-          // Show input UI
-          const topRight = rect.getSpecialCoordinate('top-right');
-
-          const inputUIRectPosition: Coordinate = {
-            x: topRight.x + this.config.input.margin,
-            y: topRight.y,
-          };
-
-          // Detect right and bottom of presentation area
-          const safeArea = this.getWindowSafeArea();
-          const svgRect  = this.getAbsoluteRect(this.svg.node());
-
-          const inputAreaBottomRight: Coordinate = {
-            x: svgRect.x + topRight.x + this.config.input.margin + this.config.input.width,
-            y: svgRect.y + topRight.y + this.config.input.height,
-          };
-
-          if (safeArea.x < inputAreaBottomRight.x) {
-            const diff = inputAreaBottomRight.x - safeArea.x;
-            inputUIRectPosition.x -= diff;
-          }
-
-          if (safeArea.y < inputAreaBottomRight.y) {
-            const diff = inputAreaBottomRight.y - safeArea.y;
-            inputUIRectPosition.y -= diff;
-          }
-
-          const inputUIRectGroup = this.svg
-            .select('g.input')
-            .style('display', 'block');
-
-          inputUIRectGroup
-            .select('rect')
-            .attr('x', inputUIRectPosition.x)
-            .attr('y', inputUIRectPosition.y);
-
-          inputUIRectGroup
-            .select('foreignObject')
-            .attr('x', inputUIRectPosition.x)
-            .attr('y', inputUIRectPosition.y);
-
-          // Focus to textarea
-          const textArea = <HTMLTextAreaElement>this.svg
-            .select('g.input textarea')
-            .node();
-
-          textArea.focus();
-          textArea.placeholder = this.config.message.textAreaPlaceholder;
-
-          this.currentTemporaryRectangle = rect;
         })
       );
+  }
+
+  private showInputUI(rectData: Rectangle): void
+  {
+    const rect = newRectangle(rectData);
+
+    // If area of rectangles under 500, cancel processing.
+    if (rect.getArea() < 500) {
+      this.cleanUpInputState();
+      return;
+    }
+
+    // Show input UI.
+    const topRight = rect.getSpecialCoordinate('top-right');
+
+    const inputUIRectPosition: Coordinate = {
+      x: topRight.x + this.config.input.margin,
+      y: topRight.y,
+    };
+
+    // Detect right and bottom of presentation area.
+    const safeArea = this.getWindowSafeArea();
+    const svgRect  = this.getAbsoluteRect(this.svg.node());
+
+    const inputAreaBottomRight: Coordinate = {
+      x: svgRect.x + topRight.x + this.config.input.margin + this.config.input.width,
+      y: svgRect.y + topRight.y + this.config.input.height,
+    };
+
+    if (safeArea.x < inputAreaBottomRight.x) {
+      const diff = inputAreaBottomRight.x - safeArea.x;
+      inputUIRectPosition.x -= diff;
+    }
+
+    if (safeArea.y < inputAreaBottomRight.y) {
+      const diff = inputAreaBottomRight.y - safeArea.y;
+      inputUIRectPosition.y -= diff;
+    }
+
+    const inputUIRectGroup = this.svg
+      .select('g.input')
+      .style('display', 'block');
+
+    inputUIRectGroup
+      .select('rect')
+      .attr('x', inputUIRectPosition.x)
+      .attr('y', inputUIRectPosition.y);
+
+    inputUIRectGroup
+      .select('foreignObject')
+      .attr('x', inputUIRectPosition.x)
+      .attr('y', inputUIRectPosition.y);
+
+    // Focus to textarea.
+    const textArea = <HTMLTextAreaElement>this.svg
+      .select('g.input textarea')
+      .node();
+
+    textArea.focus();
+    textArea.placeholder = this.config.message.textAreaPlaceholder;
+
+    this.currentTemporaryRectangle = rect;
+
+    // Restore data if edit mode.
+    if (this.currentEditingItem) {
+      // Restore text
+      textArea.value = this.currentEditingItem.text.value;
+      // Restore selected color code.
+      if (this.currentEditingItem.figure.colorCode) {
+        this.activateSelectedColor(this.currentEditingItem.figure.colorCode);
+      }
+
+      // Restore file selection state.
+      if (this.currentEditingItem.files && this.currentEditingItem.files.length) {
+        const filenameArea = <HTMLDivElement>inputUIRectGroup
+          .select('.filename')
+          .node();
+
+        filenameArea.classList.add('active');
+        filenameArea.querySelector('.text').innerHTML = this.currentEditingItem.files[0].filename;
+      }
+    }
   }
 
   private getAbsoluteRect(target: HTMLElement): Coordinate
@@ -368,20 +397,8 @@ export class Board
         const target    = d3.event.target;
         const colorCode = target.dataset['cc'];
 
-        inputUIRectGroup
-          .selectAll('.color')
-          .classed('active', false);
-
-        target.classList.add('active');
-
-        // Apply color to tmp rect
-        this.svg
-          .select(`#drawing`)
-          .attr('stroke', colorCode);
-
-        this.currentTemporaryRectangle.colorCode = colorCode;
+        this.activateSelectedColor(colorCode);
       });
-
 
     let standbyFile: File       = null;
     let standbyFilename: string = '';
@@ -408,6 +425,10 @@ export class Board
       filenameArea.querySelector('.text').innerHTML = '';
       inputUiContainer.classed('d3mb-loading', false);
       standbyFile = standbyFilename = null;
+
+      if (this.currentEditingItem && this.currentEditingItem.files && this.currentEditingItem.files.length) {
+        this.currentEditingItem.files = [];
+      }
     };
 
     // Register events for file upload.
@@ -450,7 +471,7 @@ export class Board
           try {
             const params = new FormData();
             params.append('file', standbyFile);
-            const response: UploadResponse = await axios.post(this.config.input.fileUploadEndpoint, params).then(response => response.data);
+            const response: UploadResponse = await this.uploadFile(this.config.input.fileUploadEndpoint, params);
             if (!response.url) {
               throw Error('Invalid response structure.');
             }
@@ -463,14 +484,26 @@ export class Board
           }
         }
 
-        // Create new rectangle
-        this.config.rectangles.push({
-          figure: this.currentTemporaryRectangle,
-          text:   {
-            value: textArea.value,
-          },
-          files,
-        });
+        if (this.currentEditingItem) {
+          // Update text data.
+          this.currentEditingItem.text.value = textArea.value;
+          // Update files.
+          if (files.length) {
+            this.currentEditingItem.files = files;
+          }
+          // Release variable references.
+          this.currentEditingItem = null;
+
+        } else {
+          // Create new rectangle
+          this.config.rectangles.push({
+            figure: this.currentTemporaryRectangle,
+            text:   {
+              value: textArea.value,
+            },
+            files,
+          });
+        }
 
         this.currentTemporaryRectangle = null;
 
@@ -486,6 +519,22 @@ export class Board
       .on('click', () => {
         this.cleanUpInputState();
         resetFileSelectionState();
+
+        // Revert edit state
+        if (this.currentEditingItem) {
+          const idx = this.config.rectangles.indexOf(this.currentEditingItem);
+          if (idx !== -1) {
+            const restored: Item<Rectangle> = JSON.parse(this.currentEditingItemBackup);
+            this.config.rectangles.splice(idx, 1, newRectangleItem(restored));
+            this.activateSelectedColor(restored.figure.colorCode);
+          }
+
+          this.currentEditingItem       = null;
+          this.currentEditingItemBackup = null;
+
+          // Re-initialization
+          this.initRectangles();
+        }
       });
 
     // On click file upload
@@ -494,6 +543,39 @@ export class Board
       .on('click', () => {
         fileInput.click();
       });
+  }
+
+  private activateSelectedColor(colorCode?: string): void
+  {
+    colorCode = colorCode || this.config.balloon.borderColor;
+
+    const inputUIRectGroup = this.svg.select('g.input');
+
+    inputUIRectGroup
+      .selectAll('.color')
+      .classed('active', false);
+
+    inputUIRectGroup
+      .select(`[data-cc="${colorCode}"]`)
+      .classed('active', true);
+
+    // Apply color to tmp rect
+    this.svg
+      .select(`#drawing`)
+      .attr('stroke', colorCode);
+
+    // Apply color to editing highlight rect if exists
+    if (this.currentEditingItem) {
+      const target = `rect.highlight[data-id="${this.currentEditingItem.figure.id}"]`;
+      this.svg
+        .select(target)
+        .attr('stroke', colorCode);
+    }
+
+    // Set the new color code to rectangle currently being edited
+    if (this.currentTemporaryRectangle) {
+      this.currentTemporaryRectangle.colorCode = colorCode;
+    }
   }
 
   private cleanUpInputState(): void
@@ -604,9 +686,8 @@ export class Board
         const rect    = commentRect(d.figure).calculateSize(this.config.balloon.size, this.config.balloon.autoResize, d.text.value);
         return `
         <div class="textarea" style="width: ${rect.width - 5}px; height: ${rect.height - 5}px">${this.nl2br(this.linkify(d.text.value))}</div>
-        ${hasFile
-          ? `<div class="download"><span class="file-icon" style="width: ${this.config.balloon.attachedFileLabelWidth || 70}px">${this.config.message.attachedFileLabelText}</span></div>`
-          : ''}
+        ${hasFile ? `<div class="download"><span class="download-icon" style="width: ${this.config.balloon.attachedFileLabelWidth || 70}px">${this.config.message.attachedFileLabelText}</span></div>` : ''}
+        <div class="edit"><span class="edit-icon" style="width: ${this.config.balloon.editLabelWidth || 32}px">${this.config.message.editLabelText}</span></div>
         `;
       })
     ;
@@ -627,6 +708,18 @@ export class Board
             dlIcon.classed('dl-disabled', false);
           }, 2000);
         }
+      });
+
+    const editIcon = commentRectGroup
+      .select('.edit');
+
+    editIcon
+      .on('click', (d) => {
+        this.currentEditingItem       = d;
+        this.currentEditingItemBackup = JSON.stringify(d);
+
+        this.closeAllBalloon();
+        this.showInputUI(d.figure);
       });
 
     /**
@@ -1120,13 +1213,7 @@ export class Board
       }
 
       // Close all balloon
-      this.svg
-        .selectAll(`g.rects g.comment:not(#${rectId})`)
-        .classed('fixed', false)
-        .attr('opacity', 0)
-        .style('display', 'none')
-        .lower()
-      ;
+      this.closeAllBalloon(rectId);
 
       this.svg
         .selectAll('g.rects g.comment')
@@ -1141,6 +1228,23 @@ export class Board
 
       this.currentFixedBalloonId = rectId;
     });
+  }
+
+  private closeAllBalloon(ignoreRectId?: string): void
+  {
+    let selector = 'g.rects g.comment';
+    if (ignoreRectId) {
+      selector = `g.rects g.comment:not(#${ignoreRectId})`;
+    }
+
+    // Close all balloon
+    this.svg
+      .selectAll(selector)
+      .classed('fixed', false)
+      .attr('opacity', 0)
+      .style('display', 'none')
+      .lower()
+    ;
   }
 
   private closest(root: HTMLElement, selector: string): HTMLElement
@@ -1262,10 +1366,24 @@ export class Board
         link.download   = fileName;
         document.body.appendChild(link);
         link.click();
-        document.body.removeChild(link)
+        document.body.removeChild(link);
       }
     };
     xhr.send();
+  }
+
+  private async uploadFile(endPoint: string, params: FormData): Promise<any>
+  {
+    return new Promise(resolve => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', endPoint, true);
+      xhr.onload = function () {
+        if (this.status == 200) {
+          resolve(JSON.parse(this.response));
+        }
+      };
+      xhr.send(params);
+    });
   }
 
   private makeDot(pos: Coordinate, color: string = 'black'): void

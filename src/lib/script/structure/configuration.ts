@@ -1,4 +1,4 @@
-import { Item }                                from './item';
+import { Item, newRectangleItem }              from './item';
 import { Rectangle, newRectangle }             from './rectangle';
 import { InputUIConfig, newInputUIConfig }     from './input-ui-config';
 import { BalloonUIConfig, newBalloonUIConfig } from './balloon-ui-config';
@@ -38,9 +38,7 @@ export function loadConfiguration(json: string): Configuration
 
   if (object.hasOwnProperty('rectangles')) {
     const rectangles = <Item<Rectangle>[]> object.rectangles;
-    rectangles.map(item => {
-      item.figure = newRectangle(item.figure);
-    });
+    object.rectangles = rectangles.map(item => newRectangleItem(item));
   }
 
   return object;

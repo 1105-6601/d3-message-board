@@ -8,5 +8,6 @@ export interface BalloonUIConfig {
     arrowSize: number;
     autoResize: boolean;
     attachedFileLabelWidth: number;
+    editLabelWidth: number;
 }
 export declare function newBalloonUIConfig(): BalloonUIConfig;

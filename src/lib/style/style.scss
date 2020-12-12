@@ -45,11 +45,10 @@
           overflow-y: scroll;
           overflow-x: hidden;
         }
-        .file-icon {
+        .download-icon {
           position: absolute;
           bottom: 7px;
           left: 4px;
-          //width: 70px;
           height: 15px;
           line-height: 15px;
           cursor: pointer;
@@ -60,8 +59,23 @@
           color: #fff;
           padding: 1px 2px;
         }
-        .dl-disabled .file-icon {
+        .dl-disabled .download-icon {
           color: #ccc;
+        }
+
+        .edit-icon {
+          position: absolute;
+          bottom: 7px;
+          right: 6px;
+          height: 15px;
+          line-height: 15px;
+          cursor: pointer;
+          background: #faab73;
+          border-radius: 3px;
+          font-size: 9px;
+          text-align: center;
+          color: #fff;
+          padding: 1px 2px;
         }
       }
     }

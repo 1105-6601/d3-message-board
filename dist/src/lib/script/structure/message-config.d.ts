@@ -7,5 +7,6 @@ export interface MessageConfig {
     inputUICancelText: string;
     inputUIFileUploadBtnText: string;
     attachedFileLabelText: string;
+    editLabelText: string;
 }
 export declare function newMessageConfig(): MessageConfig;

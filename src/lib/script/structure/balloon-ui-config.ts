@@ -12,6 +12,7 @@ export interface BalloonUIConfig
   arrowSize: number;
   autoResize: boolean;
   attachedFileLabelWidth: number;
+  editLabelWidth: number;
 }
 
 export function newBalloonUIConfig(): BalloonUIConfig
@@ -28,5 +29,6 @@ export function newBalloonUIConfig(): BalloonUIConfig
     arrowSize:              10,
     autoResize:             true,
     attachedFileLabelWidth: 70,
+    editLabelWidth:         32,
   };
 }
